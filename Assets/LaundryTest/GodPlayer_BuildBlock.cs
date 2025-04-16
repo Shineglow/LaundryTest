@@ -1,11 +1,14 @@
 using System;
+using Assets.LaundryTest.Buildings.Blocks;
 using LaundryTest.NewWay;
 using LaundryTest.RaycastScanners;
+using UnityEditor.PackageManager;
 using UnityEngine;
 
 namespace LaundryTest
 {
-    public class GodPlayer : MonoBehaviour
+    [RequireComponent(typeof(CharacterController))]
+    public class GodPlayer_BuildBlock : MonoBehaviour
     {
         private const float SPEED = 5f;
         private float _scale = 0.3f;
@@ -17,8 +20,8 @@ namespace LaundryTest
         private CharacterController _characterController;
         private float _verticalRotation;
 
-        private BuildObject _lookAtObject;
-        private BuildObject _objectInHands;
+        [SerializeField] private BuildBlock _lookAtObject;
+        [SerializeField] private BuildBlock _objectInHands;
 
         private bool IsObjectInHands => _objectInHands != null;
         private Vector3 _initialPosition;
@@ -35,10 +38,11 @@ namespace LaundryTest
         private void OnDrawGizmos()
         {
             Gizmos.color = Color.red;
+            Gizmos.DrawLine(playerEyes.transform.position, playerEyes.transform.position + playerEyes.transform.forward*grabDistance);
             Gizmos.DrawLine(_boxHitInfo.point, _boxHitInfo.point + _boxHitInfo.normal);
         }
 
-        private void SetObjectsInHand(BuildObject val)
+        private void SetObjectsInHand(BuildBlock val)
         {
             _objectInHands = val;
             _actualScanner = val == null ? _normalScanner : _buildScanner;
@@ -78,6 +82,53 @@ namespace LaundryTest
 
             if (IsObjectInHands)
             {
+                if (Physics.Raycast(
+                    playerEyes.transform.position,
+                    playerEyes.transform.forward,
+                    out var hitInfo,
+                    grabDistance,
+                    ~LayerMask.GetMask(GameplayLayers.GrabableLayerName)))
+                {
+                    bool isNotTopSurface = hitInfo.normal != Vector3.up;
+
+                    _targetPosition = hitInfo.point;
+                    _objectInHands.MoveObject(_targetPosition, isNotTopSurface); // correction movement
+                    _isCastSucced = true;
+                    //_objectInHands.RotateObject(Quaternion.LookRotation(_objectInHands.transform.forward, hitInfo.normal), isNotTopSurface);
+                }
+                else
+                {
+                    _objectInHands.MoveObject(playerEyes.transform.position + playerEyes.transform.forward * _distanceToObject);
+                    _isCastSucced = false;
+                }
+            }
+            else
+            {
+                if (Physics.Raycast(
+                    playerEyes.transform.position,
+                    playerEyes.transform.forward,
+                    out var hitInfo,
+                    grabDistance,
+                    LayerMask.GetMask(GameplayLayers.GrabableLayerName)))
+                {
+                    if (hitInfo.transform.TryGetComponent<BuildBlock>(out var block))
+                    {
+                        if (_lookAtObject != block)
+                        {
+                            _lookAtObject = block;
+                        }
+
+                        Debug.Log(_lookAtObject.name);
+                    }
+                }
+                else
+                {
+                    _lookAtObject = null;
+                }
+            }
+
+            if (IsObjectInHands)
+            {
                 if (_defaultControl.NormalMode.Interact.ReadValueAsObject() != null)
                 {
                     
@@ -100,7 +151,7 @@ namespace LaundryTest
                         // TODO: lock object on cursor
                         _initialPosition = _lookAtObject.transform.position;
                         _initialRotation = _lookAtObject.transform.rotation;
-                        _lookAtObject.SetCollisionsEnabled(false);
+                        //_lookAtObject.SetCollisionsEnabled(false);
                         SetObjectsInHand(_lookAtObject);
                         _distanceToObject = Vector3.Distance(playerEyes.transform.position, _initialPosition);
                     }
@@ -112,42 +163,19 @@ namespace LaundryTest
         {
             //_actualScanner.ScanForObject<BuildObject>();
             
-            if (IsObjectInHands)
-            {
-                if (EasyRaycast(out var hitInfo, grabDistance, GameplayLayers.TopLayerName))
-                {
-                    _targetPosition = hitInfo.point + hitInfo.normal * _objectInHands.Size.y / 2;
-                    _objectInHands.transform.rotation.SetLookRotation(_objectInHands.transform.forward, hitInfo.normal);
-                    _isCastSucced = true;
+            
 
-                    // if (hitInfo.transform.TryGetComponent<BuildObject>(out var block) &&
-                    //     _lookAtObject != block)
-                    // {
-                    //     _lookAtObject = block;
-                    //     Debug.Log(_lookAtObject.name);
-                    // }
-                }
-                else
-                {
-                    _isCastSucced = false;
-                }
-            }
-            else
+            /*if(_objectInHands != null)
             {
-                if (EasyRaycast(out var hitInfo, grabDistance, GameplayLayers.GrabableLayerName))
+                if (_isCastSucced)
                 {
-                    if (hitInfo.transform.TryGetComponent<BuildObject>(out var block) &&
-                        _lookAtObject != block)
-                    {
-                        _lookAtObject = block;
-                        Debug.Log(_lookAtObject.name);
-                    }
+                    _objectInHands.MoveObject(_targetPosition);
                 }
                 else
                 {
-                    _lookAtObject = null;
+                    
                 }
-            }
+            }*/
         }
 
         private void Rotate(RaycastHit hitInfo)
@@ -165,8 +193,6 @@ namespace LaundryTest
         {
             Vector3 move = transform.right * movement.x + transform.forward * movement.y;
             _characterController.Move(move * (SPEED * Time.deltaTime));
-            
-            MoveHandedObject();
         }
 
         private void RotateLookDirection(Vector2 lookDelta)
@@ -175,34 +201,6 @@ namespace LaundryTest
             _verticalRotation -= lookDelta.y * _scale;
             _verticalRotation = Mathf.Clamp(_verticalRotation, -90f, 90f);
             playerEyes.transform.localRotation = Quaternion.Euler(_verticalRotation, 0f, 0f);
-
-            MoveHandedObject();
-        }
-
-        private void MoveHandedObject()
-        {
-            if (IsObjectInHands)
-            {
-                if (_isCastSucced)
-                {
-                    _objectInHands.transform.position = _targetPosition;
-                }
-                else
-                {
-                    _objectInHands.transform.position = playerEyes.transform.position + playerEyes.transform.forward * _distanceToObject;
-                }
-            }
-        }
-        
-        private bool EasyRaycast(out RaycastHit hitInfo, float maxDistance, string layerName)
-        {
-            Transform cameraTransform = playerEyes.transform;
-            return Physics.Raycast(
-                cameraTransform.position,
-                cameraTransform.forward,
-                out hitInfo,
-                maxDistance,
-                LayerMask.GetMask(layerName));
         }
     }
 }

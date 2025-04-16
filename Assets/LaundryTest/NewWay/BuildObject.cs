@@ -1,3 +1,4 @@
+using Assets.LaundryTest.Buildings.Blocks;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -19,13 +20,16 @@ public class BuildObject : MonoBehaviour
     public Vector3 HalfSize => _halfSize;
     private Collider _collider;
 
-    public List<BoxCollider> AllSides;
-    public BoxCollider Bottom; 
+    public List<SidePhysics> AllSides;
+    public SidePhysics Bottom; 
 
     public void SetCollisionsEnabled(bool isEnabled)
     {
         _collider.enabled = isEnabled;
-        AllSides.ForEach(i => i.enabled = isEnabled);
+        AllSides.ForEach(i => {
+            i.Collider.enabled = isEnabled;
+            i.Rigidbody.detectCollisions = isEnabled;
+        });
     }
 
     private void Awake()
