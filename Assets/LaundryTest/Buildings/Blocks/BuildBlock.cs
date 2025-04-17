@@ -1,133 +1,61 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TMPro;
-using UnityEngine;
-using UnityEngine.SocialPlatforms;
+﻿using UnityEngine;
 
-namespace Assets.LaundryTest.Buildings.Blocks
+namespace LaundryTest.Buildings.Blocks
 {
-    public class BuildBlock : MonoBehaviour
+    public abstract class BuildBlock : MonoBehaviour, IBuildBlock
     {
-        [SerializeField] private Rigidbody rb;
-        [SerializeField] private new Collider collider;
+        [SerializeField] protected Rigidbody rb;
+        [SerializeField] protected new Collider collider;
+        private bool _isGrabbed;
 
-        private HashSet<Collision> _colidedNow = new HashSet<Collision>();
+        protected virtual void Awake(){}
 
         public void MoveObject(Vector3 targetPosition, bool isForce = false)
         {
-            Vector3 offset = Vector3.zero;
-
-            OffsetCorrection(isForce, ref offset);
-
-            rb.MovePosition(targetPosition + offset);
-        }
-
-        private void OffsetCorrection(bool isForce, ref Vector3 offset)
-        {
-            if (!isForce)
-            {
-                offset = GetPenetrationOffset(collider, transform.position, transform.rotation, LayerMask.GetMask("Default"));
-
-                /*foreach (var item in _colidedNow)
-                {
-                    offset -= GetOffset(item.collider, item.transform.position, item.transform.rotation);
-                }*/
-            }
+            if(_isGrabbed)
+                rb.MovePosition(targetPosition);
         }
 
         public void RotateObject(Quaternion targetRotation, bool isForce = false)
         {
-            Vector3 offset = Vector3.zero;
-
-            rb.MoveRotation(targetRotation);
-
-            OffsetCorrection(isForce, ref offset);
-
-            rb.Move(rb.position + offset, targetRotation);
+            if(_isGrabbed)
+                rb.MoveRotation(targetRotation);
         }
 
-        public Vector3 GetOffset(Collider colliderB, Vector3 positionB, Quaternion rotationB) 
+        public abstract bool CastForm(Vector3 position, Vector3 direction, float maxDistance, out RaycastHit hitInfo, int layerMask);
+
+        public void SetGrabbed(bool isGrabbed)
         {
-            if(Physics.ComputePenetration(collider, transform.position, transform.rotation, colliderB, positionB, rotationB, out Vector3 direction, out float distance))
+            if (isGrabbed == _isGrabbed) return;
+            
+            _isGrabbed = isGrabbed;
+            gameObject.layer = isGrabbed
+                ? LayerMask.NameToLayer(GameplayLayers.GrabbedLayerName)
+                : LayerMask.NameToLayer(GameplayLayers.GrabableLayerName);
+            SetScannerEnabled(isGrabbed);
+        }
+
+        public bool TryPlaceToGround()
+        {
+            bool result = false;
+            var isGrabbed = _isGrabbed;
+            SetGrabbed(true);
+            
+            if(CastForm(
+                   transform.position, 
+                   Vector3.down, 
+                   float.PositiveInfinity, 
+                   out var hitInfo, 
+                   LayerMask.GetMask(GameplayLayers.Default, GameplayLayers.GrabableLayerName)))
             {
-                return direction*distance;
+                result = true;
+                MoveObject(transform.position += Vector3.down * hitInfo.distance);
             }
-            return Vector3.zero;
+            
+            SetGrabbed(isGrabbed);
+            return result;
         }
 
-        public void SetCollisionsEnabled(bool enabled)
-        {
-            rb.detectCollisions = enabled;
-            collider.enabled = enabled;
-        }
-
-        private Vector3 GetPenetrationOffset(
-            Collider collider,
-            Vector3 position,
-            Quaternion rotation,
-            LayerMask layerMask)
-        {
-            Vector3 totalOffset = Vector3.zero;
-
-            Collider[] overlaps = Physics.OverlapBox(
-                position,
-                collider.bounds.extents,
-                rotation,
-                layerMask,
-                QueryTriggerInteraction.Ignore);
-
-            foreach (var other in overlaps)
-            {
-                if (other == collider)
-                    continue;
-
-                bool hasPenetration = Physics.ComputePenetration(
-                    collider, position, rotation,
-                    other, other.transform.position, other.transform.rotation,
-                    out var direction, out var distance);
-
-                if (hasPenetration)
-                {
-                    totalOffset += direction.normalized * distance;
-                }
-            }
-
-            return totalOffset;
-        }
-
-        /*int updatesCounter = 0;
-        private void FixedUpdate()
-        {
-            updatesCounter++;
-            if(updatesCounter == 10)
-            {
-                Vector3 offset = Vector3.zero;
-
-                OffsetCorrection(false, ref offset);
-
-                Debug.Log(offset);
-
-                updatesCounter = 0;
-            }
-        }
-
-        private void OnCollisionEnter(Collision collision)
-        {
-            if (!_colidedNow.Contains(collision))
-            {
-                _colidedNow.Add(collision);
-            }
-        }
-
-        private void OnCollisionExit(Collision collision)
-        {
-            if (_colidedNow.Contains(collision))
-            {
-                _colidedNow.Remove(collision);
-            }
-        }*/
+        protected abstract void SetScannerEnabled(bool isEnabled);
     }
 }

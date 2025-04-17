@@ -14,13 +14,13 @@ TagManager:
   - Water
   - UI
   - Grabable
+  - Grabbed
+  - SurfaceDetector
   - 
   - 
-  - Top
-  - Front
-  - Back
-  - Side
-  - Bottom
+  - 
+  - 
+  - 
   - 
   - 
   - 
