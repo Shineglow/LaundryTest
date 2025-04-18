@@ -7,5 +7,8 @@ namespace LaundryTest
         public const string SurfaceDetector = "SurfaceDetector";
         public const string GrabableLayerName = "Grabable";
         public const string GrabbedLayerName = "Grabbed";
+        public const string GroundDetector = "GroundDetector";
+        public const string Spawner = "Spawner";
+        public const string Wall = "Wall";
     }
 }

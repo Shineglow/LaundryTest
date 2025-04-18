@@ -1,10 +1,7 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using LaundryTest.UI;
 using UnityEngine;
 
-namespace LaundryTest
+namespace LaundryTest.UI
 {
     public class UISystem : MonoBehaviour
     {
@@ -28,7 +25,6 @@ namespace LaundryTest
                     {
                         continue;
                     }
-                    Debug.LogWarning($"Layer {(EUILayer)i} not set by default");
                     var layer = new GameObject(((EUILayer)i).ToString());
                     layer.transform.SetParent(transform);
                     layers[i] = layer.transform;

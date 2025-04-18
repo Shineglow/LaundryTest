@@ -164,6 +164,33 @@ public partial class @DefaultControl: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Action1"",
+                    ""type"": ""Button"",
+                    ""id"": ""0d7e5656-c131-4d4d-840d-6839be2c68fc"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Action2"",
+                    ""type"": ""Button"",
+                    ""id"": ""b12096a0-6469-42f6-b67e-a818f412ab17"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Action3"",
+                    ""type"": ""Button"",
+                    ""id"": ""61d17e37-a376-42d1-bcb7-676ef2d8f97d"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -186,6 +213,39 @@ public partial class @DefaultControl: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Cancel"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""212e3f9f-4073-4f5c-b630-328d38a35a44"",
+                    ""path"": ""<Keyboard>/e"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Action1"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""fc12e87b-6f25-404b-b4d3-2fe5c5a5add6"",
+                    ""path"": ""<Keyboard>/f"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Action2"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""6f5c5b2d-904d-465b-bed6-8ecdc02c1d7e"",
+                    ""path"": ""<Keyboard>/ctrl"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Action3"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -721,6 +781,9 @@ public partial class @DefaultControl: IInputActionCollection2, IDisposable
         m_NormalMode = asset.FindActionMap("NormalMode", throwIfNotFound: true);
         m_NormalMode_Interact = m_NormalMode.FindAction("Interact", throwIfNotFound: true);
         m_NormalMode_Cancel = m_NormalMode.FindAction("Cancel", throwIfNotFound: true);
+        m_NormalMode_Action1 = m_NormalMode.FindAction("Action1", throwIfNotFound: true);
+        m_NormalMode_Action2 = m_NormalMode.FindAction("Action2", throwIfNotFound: true);
+        m_NormalMode_Action3 = m_NormalMode.FindAction("Action3", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -904,12 +967,18 @@ public partial class @DefaultControl: IInputActionCollection2, IDisposable
     private List<INormalModeActions> m_NormalModeActionsCallbackInterfaces = new List<INormalModeActions>();
     private readonly InputAction m_NormalMode_Interact;
     private readonly InputAction m_NormalMode_Cancel;
+    private readonly InputAction m_NormalMode_Action1;
+    private readonly InputAction m_NormalMode_Action2;
+    private readonly InputAction m_NormalMode_Action3;
     public struct NormalModeActions
     {
         private @DefaultControl m_Wrapper;
         public NormalModeActions(@DefaultControl wrapper) { m_Wrapper = wrapper; }
         public InputAction @Interact => m_Wrapper.m_NormalMode_Interact;
         public InputAction @Cancel => m_Wrapper.m_NormalMode_Cancel;
+        public InputAction @Action1 => m_Wrapper.m_NormalMode_Action1;
+        public InputAction @Action2 => m_Wrapper.m_NormalMode_Action2;
+        public InputAction @Action3 => m_Wrapper.m_NormalMode_Action3;
         public InputActionMap Get() { return m_Wrapper.m_NormalMode; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -925,6 +994,15 @@ public partial class @DefaultControl: IInputActionCollection2, IDisposable
             @Cancel.started += instance.OnCancel;
             @Cancel.performed += instance.OnCancel;
             @Cancel.canceled += instance.OnCancel;
+            @Action1.started += instance.OnAction1;
+            @Action1.performed += instance.OnAction1;
+            @Action1.canceled += instance.OnAction1;
+            @Action2.started += instance.OnAction2;
+            @Action2.performed += instance.OnAction2;
+            @Action2.canceled += instance.OnAction2;
+            @Action3.started += instance.OnAction3;
+            @Action3.performed += instance.OnAction3;
+            @Action3.canceled += instance.OnAction3;
         }
 
         private void UnregisterCallbacks(INormalModeActions instance)
@@ -935,6 +1013,15 @@ public partial class @DefaultControl: IInputActionCollection2, IDisposable
             @Cancel.started -= instance.OnCancel;
             @Cancel.performed -= instance.OnCancel;
             @Cancel.canceled -= instance.OnCancel;
+            @Action1.started -= instance.OnAction1;
+            @Action1.performed -= instance.OnAction1;
+            @Action1.canceled -= instance.OnAction1;
+            @Action2.started -= instance.OnAction2;
+            @Action2.performed -= instance.OnAction2;
+            @Action2.canceled -= instance.OnAction2;
+            @Action3.started -= instance.OnAction3;
+            @Action3.performed -= instance.OnAction3;
+            @Action3.canceled -= instance.OnAction3;
         }
 
         public void RemoveCallbacks(INormalModeActions instance)
@@ -1083,6 +1170,9 @@ public partial class @DefaultControl: IInputActionCollection2, IDisposable
     {
         void OnInteract(InputAction.CallbackContext context);
         void OnCancel(InputAction.CallbackContext context);
+        void OnAction1(InputAction.CallbackContext context);
+        void OnAction2(InputAction.CallbackContext context);
+        void OnAction3(InputAction.CallbackContext context);
     }
     public interface IUIActions
     {

@@ -6,6 +6,8 @@ TagManager:
   tags:
   - Surface
   - Grabable
+  - Floor
+  - Wall
   layers:
   - Default
   - TransparentFX
@@ -16,9 +18,9 @@ TagManager:
   - Grabable
   - Grabbed
   - SurfaceDetector
-  - 
-  - 
-  - 
+  - GroundDetector
+  - Spawner
+  - Wall
   - 
   - 
   - 
